@@ -1,0 +1,20 @@
+{
+  "name": "sbm-tour-india",
+  "private": true,
+  "description": "SBM Tour India rebuild — React + Node + MySQL (see ../SBM_TOUR_INDIA_REBUILD_MASTER_PROMPT.md)",
+  "workspaces": [
+    "api",
+    "web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w api\" \"npm run dev -w web\"",
+    "dev:api": "npm run dev -w api",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "start:api": "npm run start -w api",
+    "migrate": "npm run migrate -w api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
