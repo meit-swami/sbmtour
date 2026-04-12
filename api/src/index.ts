@@ -1,7 +1,7 @@
 import cors from "cors";
-import express from "express";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
+import express, { type RequestHandler } from "express";
+import helmetImport from "helmet";
+import rateLimitImport from "express-rate-limit";
 import multer from "multer";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -9,6 +9,18 @@ import { config } from "./config.js";
 import { legacyImagesDir } from "./legacyAssets.js";
 import { publicRouter } from "./routes/public/index.js";
 import { adminRouter } from "./routes/admin/index.js";
+
+/** Default-import types for helmet / rate-limit disagree with NodeNext + package typings on some TS versions. */
+const helmet = helmetImport as unknown as (options?: {
+  contentSecurityPolicy?: false | Record<string, unknown>;
+}) => RequestHandler;
+const rateLimit = rateLimitImport as unknown as (options: {
+  windowMs: number;
+  max: number;
+  standardHeaders?: boolean;
+  legacyHeaders?: boolean;
+  skip?: (req: express.Request) => boolean;
+}) => RequestHandler;
 
 const app = express();
 
@@ -56,7 +68,7 @@ const publicPostLimiter = rateLimit({
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.method !== "POST",
+  skip: (req: express.Request) => req.method !== "POST",
 });
 
 app.use("/api", publicPostLimiter, publicRouter);
