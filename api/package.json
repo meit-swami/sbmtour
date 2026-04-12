@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node --import tsx src/index.ts",
+    "start:prod": "node dist/index.js",
     "build": "tsc -p tsconfig.build.json",
     "migrate": "node --import tsx src/db/migrate.ts"
   },
