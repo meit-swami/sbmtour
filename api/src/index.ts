@@ -94,6 +94,11 @@ app.use(
   }
 );
 
-app.listen(config.port, () => {
-  console.log(`API listening on http://localhost:${config.port}`);
-});
+export default app;
+
+/** Long-running server for local / VPS. On Vercel, the platform runs the default export as one function. */
+if (process.env.VERCEL !== "1") {
+  app.listen(config.port, () => {
+    console.log(`API listening on http://localhost:${config.port}`);
+  });
+}
