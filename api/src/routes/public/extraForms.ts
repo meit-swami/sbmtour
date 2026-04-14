@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { ResultSetHeader } from "mysql2";
-import rateLimit from "express-rate-limit";
+import { rateLimit } from "express-rate-limit";
 import {
   notifyBookingRequestSubmitted,
   notifySupportTicketSubmitted,
