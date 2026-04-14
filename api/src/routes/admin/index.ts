@@ -1,5 +1,5 @@
 import { Router } from "express";
-import rateLimit from "express-rate-limit";
+import { rateLimit } from "express-rate-limit";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { requireAdmin } from "../../middleware/adminAuth.js";
 import { pool } from "../../db/pool.js";

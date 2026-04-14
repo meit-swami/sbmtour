@@ -7,3 +7,5 @@ build/
 .DS_Store
 api/uploads/
 web/.vite/
+.vercel
+.env*.local
