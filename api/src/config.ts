@@ -11,7 +11,10 @@ function required(name: string, fallback?: string): string {
 export const config = {
   port: Number(process.env.PORT) || 4000,
   nodeEnv: process.env.NODE_ENV ?? "development",
-  webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
+  webOrigins: (process.env.WEB_ORIGIN ?? "http://localhost:5173")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
   /** Canonical origin for sitemap / absolute URLs (no trailing slash). */
   publicSiteUrl: process.env.PUBLIC_SITE_URL ?? "",
   jwt: {

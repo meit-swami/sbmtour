@@ -58,7 +58,17 @@ if (existsSync(legacyImg)) {
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(
   cors({
-    origin: config.webOrigin,
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      if (config.webOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`CORS blocked origin: ${origin}`));
+    },
     credentials: true,
   })
 );
