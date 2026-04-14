@@ -33,7 +33,9 @@ app.get("/", (_req, res) => {
   });
 });
 
-const uploadsRoot = join(process.cwd(), "uploads");
+// Vercel serverless filesystem is read-only except /tmp.
+const uploadsRoot =
+  process.env.VERCEL === "1" ? "/tmp/uploads" : join(process.cwd(), "uploads");
 mkdirSync(uploadsRoot, { recursive: true });
 app.use("/api/uploads", express.static(uploadsRoot));
 
