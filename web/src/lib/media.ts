@@ -1,3 +1,5 @@
+import { buildApiUrl } from "./api";
+
 /** Matches legacy PHP paths under `assets/images/{subfolder}/`. */
 export function legacyMediaUrl(
   subfolder: string,
@@ -12,5 +14,5 @@ export function legacyMediaUrl(
     .map(encodeURIComponent)
     .join("/");
   const folder = subfolder.replace(/^\/+|\/+$/g, "");
-  return `/legacy-media/${folder}/${safe}`;
+  return buildApiUrl(`/legacy-media/${folder}/${safe}`);
 }

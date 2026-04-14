@@ -13,6 +13,7 @@ import { adminRouter } from "./routes/admin/index.js";
 /** Default-import types for helmet / rate-limit disagree with NodeNext + package typings on some TS versions. */
 const helmet = helmetImport as unknown as (options?: {
   contentSecurityPolicy?: false | Record<string, unknown>;
+  crossOriginResourcePolicy?: false | { policy: "same-origin" | "same-site" | "cross-origin" };
 }) => RequestHandler;
 const rateLimit = rateLimitImport as unknown as (options: {
   windowMs: number;
@@ -55,7 +56,13 @@ if (existsSync(legacyImg)) {
 }
 
 /** JSON API — CSP is enforced on the Vite SPA (see `web/vite.config.ts`), not here. */
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    // Frontend is hosted on a different origin; allow images/videos to load cross-origin.
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 app.use(
   cors({
     origin: (origin, callback) => {
