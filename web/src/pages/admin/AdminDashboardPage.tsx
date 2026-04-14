@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiGet } from "@/lib/api";
 import { adminApiGet } from "@/lib/adminApi";
 
 type Health = { ok: boolean; db: string };
@@ -29,8 +30,7 @@ export function AdminDashboardPage() {
   const [statsErr, setStatsErr] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/health")
-      .then((r) => r.json())
+    apiGet<Health>("/api/health")
       .then((h: Health) => setDb(h.db))
       .catch(() => setDb("offline"));
   }, []);

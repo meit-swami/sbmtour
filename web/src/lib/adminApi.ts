@@ -1,3 +1,5 @@
+import { buildApiUrl } from "./api";
+
 const TOKEN_KEY = "sbm_admin_jwt";
 
 export function getAdminToken(): string | null {
@@ -33,7 +35,7 @@ export async function loginAdmin(
   username: string,
   password: string
 ): Promise<{ id: number; username: string; email: string }> {
-  const res = await fetch("/api/admin/auth/login", {
+  const res = await fetch(buildApiUrl("/api/admin/auth/login"), {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -57,7 +59,7 @@ export async function loginAdmin(
 
 export async function adminApiGet<T>(path: string): Promise<T> {
   const token = getAdminToken();
-  const res = await fetch(path, {
+  const res = await fetch(buildApiUrl(path), {
     headers: {
       Accept: "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -75,7 +77,7 @@ export async function adminApiGet<T>(path: string): Promise<T> {
 
 export async function adminApiPut<T>(path: string, body: unknown): Promise<T> {
   const token = getAdminToken();
-  const res = await fetch(path, {
+  const res = await fetch(buildApiUrl(path), {
     method: "PUT",
     headers: {
       Accept: "application/json",
@@ -96,7 +98,7 @@ export async function adminApiPut<T>(path: string, body: unknown): Promise<T> {
 
 export async function adminApiPatch<T>(path: string, body: unknown): Promise<T> {
   const token = getAdminToken();
-  const res = await fetch(path, {
+  const res = await fetch(buildApiUrl(path), {
     method: "PATCH",
     headers: {
       Accept: "application/json",
@@ -120,7 +122,7 @@ export async function adminDownloadCsv(
   filename: string
 ): Promise<void> {
   const token = getAdminToken();
-  const res = await fetch(path, {
+  const res = await fetch(buildApiUrl(path), {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   if (res.status === 401) {
@@ -141,7 +143,7 @@ export async function adminDownloadCsv(
 
 export async function adminApiPost<T>(path: string, body: unknown): Promise<T> {
   const token = getAdminToken();
-  const res = await fetch(path, {
+  const res = await fetch(buildApiUrl(path), {
     method: "POST",
     headers: {
       Accept: "application/json",

@@ -1,7 +1,15 @@
-const base = "";
+const envBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+const base = envBase ? envBase.replace(/\/+$/, "") : "";
+
+export function buildApiUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+  if (!base) return path;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${normalizedPath}`;
+}
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${base}${path}`, {
+  const res = await fetch(buildApiUrl(path), {
     headers: { Accept: "application/json" },
   });
   if (!res.ok) {
@@ -11,7 +19,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${base}${path}`, {
+  const res = await fetch(buildApiUrl(path), {
     method: "POST",
     headers: {
       Accept: "application/json",
