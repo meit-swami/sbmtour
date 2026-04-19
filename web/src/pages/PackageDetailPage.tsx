@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiGet, apiPost } from "@/lib/api";
 import { legacyMediaUrl } from "@/lib/media";
@@ -128,18 +128,14 @@ export function PackageDetailPage() {
   const img = legacyMediaUrl("packages", pkg.featured_image);
   const lead = formatInr(pickLeadPrice(pkg));
 
-  const tabs = useMemo(
-    () =>
-      [
-        { id: "details", label: "DETAILS" },
-        { id: "itinerary", label: "ITINERARY", hidden: payload.itinerary.length === 0 },
-        { id: "inclusions", label: "INCLUSIONS", hidden: payload.inclusions.length === 0 },
-        { id: "exclusions", label: "EXCLUSIONS", hidden: payload.exclusions.length === 0 },
-        { id: "photos", label: "PHOTOS", hidden: payload.gallery.length === 0 },
-        { id: "reviews", label: "REVIEWS" },
-      ].filter((t) => !t.hidden) as { id: PackageTab; label: string }[],
-    [payload]
-  );
+  const tabs = [
+    { id: "details", label: "DETAILS" },
+    { id: "itinerary", label: "ITINERARY", hidden: payload.itinerary.length === 0 },
+    { id: "inclusions", label: "INCLUSIONS", hidden: payload.inclusions.length === 0 },
+    { id: "exclusions", label: "EXCLUSIONS", hidden: payload.exclusions.length === 0 },
+    { id: "photos", label: "PHOTOS", hidden: payload.gallery.length === 0 },
+    { id: "reviews", label: "REVIEWS" },
+  ].filter((t) => !t.hidden) as { id: PackageTab; label: string }[];
 
   const priceRows = [
     {
