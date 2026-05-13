@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { MapPin } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { legacyMediaUrl } from "@/lib/media";
+import { cn } from "@/lib/utils";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import type { DestinationRow } from "@/types/home";
 
 export function DestinationsPage() {
+  usePageMeta(
+    "Destinations | SBM Tour India",
+    "Browse Indian and international destinations curated by our travel experts."
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const typeFromUrl = searchParams.get("type") ?? "";
 
@@ -47,72 +54,93 @@ export function DestinationsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <h1 className="text-3xl font-bold text-brand-navy">Destinations</h1>
-      <p className="mt-2 text-slate-600">
-        Browse by category — same data as the legacy destination catalogue.
-      </p>
-
-      {types.length > 0 ? (
-        <div className="mt-8 flex flex-wrap gap-2">
-          {types.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => selectType(t)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                t === activeType
-                  ? "bg-brand-navy text-white"
-                  : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+    <>
+      <div className="border-b border-border bg-secondary/40 pb-12 pt-28">
+        <div className="container mx-auto px-4 lg:px-8">
+          <span className="text-xs font-semibold uppercase tracking-wider text-cta">
+            Explore
+          </span>
+          <h1 className="mt-2 font-display text-3xl font-bold md:text-5xl">
+            Destinations
+          </h1>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            Filter by category and discover handpicked places to explore.
+          </p>
         </div>
-      ) : null}
-
-      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {loading ? (
-          <p className="col-span-full text-center text-slate-500">Loading…</p>
-        ) : (
-          destinations.map((d) => {
-            const img = legacyMediaUrl("destination", d.destination_image);
-            return (
-            <Link
-              key={d.id}
-              to={`/destinations/${d.destination_slug}`}
-              className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
-            >
-              <div className="aspect-[4/3] overflow-hidden bg-slate-100">
-                {img ? (
-                  <img
-                    src={img}
-                    alt=""
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                  />
-                ) : null}
-              </div>
-              <div className="p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-brand-accent">
-                  {d.country_name}
-                </p>
-                <h2 className="mt-1 text-lg font-semibold text-brand-navy group-hover:text-brand-accent">
-                  {d.destination_name}
-                </h2>
-                <p className="mt-1 text-xs text-slate-500">{d.destination_type}</p>
-              </div>
-            </Link>
-            );
-          })
-        )}
       </div>
 
-      {!loading && destinations.length === 0 && activeType ? (
-        <p className="mt-12 text-center text-slate-500">
-          No destinations in this category.
-        </p>
-      ) : null}
-    </div>
+      <div className="container mx-auto px-4 py-10 lg:px-8">
+        {types.length > 0 ? (
+          <div className="mb-8 flex flex-wrap gap-2 border-b border-border">
+            {types.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => selectType(t)}
+                className={cn(
+                  "relative -mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors",
+                  t === activeType
+                    ? "border-cta text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-64 animate-pulse rounded-2xl border border-border bg-card"
+              />
+            ))}
+          </div>
+        ) : destinations.length === 0 ? (
+          <p className="py-12 text-center text-muted-foreground">
+            No destinations in this category.
+          </p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {destinations.map((d) => {
+              const img = legacyMediaUrl("destination", d.destination_image);
+              return (
+                <Link
+                  key={d.id}
+                  to={`/destinations/${d.destination_slug}`}
+                  className="group relative aspect-[4/5] overflow-hidden rounded-2xl shadow-soft hover-lift"
+                >
+                  {img ? (
+                    <img
+                      src={img}
+                      alt={d.destination_name}
+                      loading="lazy"
+                      className="img-zoom h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-secondary" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                  <div className="absolute left-3 top-3">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-foreground">
+                      <MapPin className="h-3 w-3" /> {d.country_name}
+                    </span>
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 p-4 text-white">
+                    <div className="font-display text-xl font-bold">
+                      {d.destination_name}
+                    </div>
+                    <div className="mt-0.5 text-xs opacity-85">{d.destination_type}</div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
   );
 }

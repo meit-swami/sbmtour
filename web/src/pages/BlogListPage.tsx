@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { legacyMediaUrl } from "@/lib/media";
 import { stripHtml } from "@/lib/text";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 type BlogRow = {
   id: number;
@@ -15,6 +17,10 @@ type BlogRow = {
 };
 
 export function BlogListPage() {
+  usePageMeta(
+    "Blog | SBM Tour India",
+    "Travel tips, trip reports and curated guides from our travel experts."
+  );
   const [rows, setRows] = useState<BlogRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,59 +32,81 @@ export function BlogListPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <h1 className="text-3xl font-bold text-brand-navy">Travel stories</h1>
-      <p className="mt-2 text-slate-600">
-        Tips and trip reports from <code className="text-xs">tbl_blog</code>.
-      </p>
+    <>
+      <div className="border-b border-border bg-secondary/40 pb-12 pt-28">
+        <div className="container mx-auto px-4 lg:px-8">
+          <span className="text-xs font-semibold uppercase tracking-wider text-cta">
+            From the journal
+          </span>
+          <h1 className="mt-2 font-display text-3xl font-bold md:text-5xl">
+            Travel stories
+          </h1>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            Tips, trip reports and inspiration from travellers like you.
+          </p>
+        </div>
+      </div>
 
-      <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+      <div className="container mx-auto px-4 py-10 lg:px-8">
         {loading ? (
-          <p className="col-span-full text-center text-slate-500">Loading…</p>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-72 animate-pulse rounded-2xl border border-border bg-card"
+              />
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
+          <p className="py-12 text-center text-muted-foreground">No stories yet.</p>
         ) : (
-          rows.map((b) => {
-            const cover = legacyMediaUrl("blogs", b.blog_image);
-            return (
-            <article
-              key={b.id}
-              className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-            >
-              <Link to={`/blog/${b.blog_slug}`}>
-                {cover ? (
-                  <img
-                    src={cover}
-                    alt=""
-                    className="aspect-video w-full object-cover"
-                  />
-                ) : (
-                  <div className="aspect-video bg-slate-100" />
-                )}
-              </Link>
-              <div className="p-4">
-                <time className="text-xs text-slate-500">{b.blogDate}</time>
-                <Link to={`/blog/${b.blog_slug}`}>
-                  <h2 className="mt-1 text-lg font-semibold text-brand-navy hover:text-brand-accent">
-                    {b.blog_name || b.blogPlace || "Story"}
-                  </h2>
-                </Link>
-                {b.blogPlace ? (
-                  <p className="text-xs text-brand-accent">{b.blogPlace}</p>
-                ) : null}
-                <p className="mt-2 text-sm text-slate-600 line-clamp-3">
-                  {stripHtml(b.blogDesc, 160)}
-                </p>
-                <Link
-                  to={`/blog/${b.blog_slug}`}
-                  className="mt-3 inline-block text-sm font-semibold text-brand-accent"
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {rows.map((b) => {
+              const cover = legacyMediaUrl("blogs", b.blog_image);
+              return (
+                <article
+                  key={b.id}
+                  className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft hover-lift"
                 >
-                  Read more
-                </Link>
-              </div>
-            </article>
-            );
-          })
+                  <Link to={`/blog/${b.blog_slug}`} className="group block">
+                    <div className="aspect-[16/10] overflow-hidden bg-muted">
+                      {cover ? (
+                        <img
+                          src={cover}
+                          alt=""
+                          className="img-zoom h-full w-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                  </Link>
+                  <div className="p-5">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <time>{b.blogDate}</time>
+                      {b.blogPlace ? (
+                        <span className="text-cta">{b.blogPlace}</span>
+                      ) : null}
+                    </div>
+                    <Link to={`/blog/${b.blog_slug}`}>
+                      <h2 className="mt-2 font-display text-lg font-semibold transition-colors hover:text-primary">
+                        {b.blog_name || b.blogPlace || "Story"}
+                      </h2>
+                    </Link>
+                    <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
+                      {stripHtml(b.blogDesc, 160)}
+                    </p>
+                    <Link
+                      to={`/blog/${b.blog_slug}`}
+                      className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-cta"
+                    >
+                      Read more <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

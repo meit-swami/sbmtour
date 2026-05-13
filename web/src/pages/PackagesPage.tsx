@@ -1,19 +1,32 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { Search, SlidersHorizontal, X } from "lucide-react";
+import { PackageCard } from "@/components/site/PackageCard";
 import { apiGet } from "@/lib/api";
-import { legacyMediaUrl } from "@/lib/media";
-import { pickLeadPrice } from "@/lib/pricing";
-import { formatInr } from "@/lib/text";
+import { cn } from "@/lib/utils";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import type { PackageRow } from "@/types/home";
 
+const PACK_TYPES = ["Domestic", "International"] as const;
+
+type SortKey = "popular" | "price-asc" | "price-desc";
+
 export function PackagesPage() {
+  usePageMeta(
+    "Tour Packages | SBM Tour India",
+    "Browse curated domestic and international tour packages."
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("q") ?? "";
-  const packType = searchParams.get("packType") ?? "";
+  const packType = (searchParams.get("packType") ?? "") as
+    | (typeof PACK_TYPES)[number]
+    | "";
+  const sort = (searchParams.get("sort") ?? "popular") as SortKey;
 
   const [list, setList] = useState<PackageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [localQ, setLocalQ] = useState(q);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     setLocalQ(q);
@@ -21,9 +34,7 @@ export function PackagesPage() {
 
   const queryString = useMemo(() => {
     const p = new URLSearchParams();
-    if (packType === "Domestic" || packType === "International") {
-      p.set("packType", packType);
-    }
+    if (packType) p.set("packType", packType);
     if (q.trim()) p.set("q", q.trim());
     p.set("limit", "48");
     return p.toString();
@@ -37,6 +48,22 @@ export function PackagesPage() {
       .finally(() => setLoading(false));
   }, [queryString]);
 
+  const sorted = useMemo(() => {
+    const arr = [...list];
+    const priceOf = (p: PackageRow) => {
+      const v =
+        p.dual_discounted_price ??
+        p.single_discounted_price ??
+        p.dual_actual_price ??
+        p.single_actual_price ??
+        0;
+      return typeof v === "string" ? Number(v) : Number(v ?? 0);
+    };
+    if (sort === "price-asc") arr.sort((a, b) => priceOf(a) - priceOf(b));
+    else if (sort === "price-desc") arr.sort((a, b) => priceOf(b) - priceOf(a));
+    return arr;
+  }, [list, sort]);
+
   function applyFilters(e: FormEvent) {
     e.preventDefault();
     const next = new URLSearchParams(searchParams);
@@ -46,132 +73,185 @@ export function PackagesPage() {
     setSearchParams(next);
   }
 
+  function setParam(key: string, value: string) {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setSearchParams(next);
+  }
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <h1 className="text-3xl font-bold text-brand-navy">Tour packages</h1>
-      <p className="mt-2 text-slate-600">
-        Search and filter by domestic or international — data from{" "}
-        <code className="text-xs">tbl_package</code>.
-      </p>
+    <>
+      <PageHero
+        title="Explore Packages"
+        subtitle={`Find the perfect getaway from ${list.length || "100+"} curated trips.`}
+      />
 
-      <form
-        onSubmit={applyFilters}
-        className="mt-8 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-end"
-      >
-        <div className="flex-1">
-          <label htmlFor="pkg-q" className="text-xs font-medium text-slate-500">
-            Search
-          </label>
-          <input
-            id="pkg-q"
-            value={localQ}
-            onChange={(e) => setLocalQ(e.target.value)}
-            placeholder="Package name…"
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="pkg-type" className="text-xs font-medium text-slate-500">
-            Type
-          </label>
-          <select
-            id="pkg-type"
-            value={packType}
-            onChange={(e) => {
-              const v = e.target.value;
-              const next = new URLSearchParams(searchParams);
-              if (v === "Domestic" || v === "International") {
-                next.set("packType", v);
-              } else {
-                next.delete("packType");
-              }
-              setSearchParams(next);
-            }}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm md:w-48"
+      <div className="container mx-auto grid gap-8 px-4 py-10 lg:grid-cols-[280px_1fr] lg:px-8">
+        <div className="mb-2 flex items-center justify-between lg:hidden">
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary"
           >
-            <option value="">All types</option>
-            <option value="Domestic">Domestic</option>
-            <option value="International">International</option>
-          </select>
+            <SlidersHorizontal className="h-4 w-4" /> Filters
+          </button>
+          <SortDropdown value={sort} onChange={(v) => setParam("sort", v)} />
         </div>
-        <button
-          type="submit"
-          className="rounded-lg bg-brand-navy px-5 py-2 text-sm font-semibold text-white hover:bg-brand-navy-light"
+
+        <aside
+          className={cn(
+            filtersOpen
+              ? "fixed inset-0 z-50 overflow-y-auto bg-background p-5"
+              : "hidden",
+            "lg:sticky lg:top-24 lg:block lg:h-fit lg:bg-transparent lg:p-0"
+          )}
         >
-          Search
-        </button>
-      </form>
-
-      <div className="mt-10 space-y-4">
-        {loading ? (
-          <p className="text-center text-slate-500">Loading…</p>
-        ) : (
-          list.map((p) => {
-            const thumb = legacyMediaUrl("packages", p.featured_image);
-            const price = formatInr(pickLeadPrice(p));
-            return (
-              <article
-                key={p.id}
-                className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row"
-              >
-                <Link
-                  to={`/packages/${p.package_slug}`}
-                  className="flex h-40 w-full shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-32 sm:w-44"
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-lg font-semibold">Filters</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchParams(new URLSearchParams());
+                    setLocalQ("");
+                  }}
+                  className="text-xs font-semibold text-primary hover:underline"
                 >
-                  {thumb ? (
-                    <img
-                      src={thumb}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : null}
-                </Link>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-xs text-slate-500">{p.packType}</span>
-                    {p.is_featured ? (
-                      <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
-                        Featured
-                      </span>
-                    ) : null}
-                  </div>
-                  <Link
-                    to={`/packages/${p.package_slug}`}
-                    className="mt-1 block text-lg font-semibold text-brand-navy hover:text-brand-accent"
-                  >
-                    {p.packName}
-                  </Link>
-                  <p className="text-sm text-slate-600">
-                    {[p.destination_name, p.country_name]
-                      .filter(Boolean)
-                      .join(" · ") || p.country_name}{" "}
-                    · {p.packDuration}
-                  </p>
-                  <div className="mt-3 flex flex-wrap items-center gap-3">
-                    {price ? (
-                      <span className="font-bold text-brand-navy">
-                        From {price}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-slate-500">Ask for quote</span>
-                    )}
-                    <Link
-                      to={`/packages/${p.package_slug}`}
-                      className="rounded-lg bg-brand-accent px-4 py-2 text-sm font-semibold text-brand-navy hover:bg-brand-accent-hover"
-                    >
-                      View details
-                    </Link>
-                  </div>
-                </div>
-              </article>
-            );
-          })
-        )}
-      </div>
+                  Reset
+                </button>
+                <button
+                  type="button"
+                  className="lg:hidden"
+                  onClick={() => setFiltersOpen(false)}
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
 
-      {!loading && list.length === 0 ? (
-        <p className="mt-12 text-center text-slate-500">No packages match.</p>
-      ) : null}
+            <form onSubmit={applyFilters} className="space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-semibold">Search</label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    value={localQ}
+                    onChange={(e) => setLocalQ(e.target.value)}
+                    placeholder="Bali, Kerala, Goa…"
+                    className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold">Type</label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setParam("packType", "")}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
+                      !packType
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background hover:border-primary/40"
+                    )}
+                  >
+                    All
+                  </button>
+                  {PACK_TYPES.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setParam("packType", t)}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
+                        packType === t
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background hover:border-primary/40"
+                      )}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full rounded-lg bg-cta px-4 py-2.5 text-sm font-semibold text-cta-foreground shadow-cta hover:bg-cta/90"
+              >
+                Apply
+              </button>
+            </form>
+          </div>
+        </aside>
+
+        <main>
+          <div className="mb-6 hidden items-center justify-between lg:flex">
+            <p className="text-sm text-muted-foreground">
+              {sorted.length} package{sorted.length !== 1 && "s"} found
+            </p>
+            <SortDropdown value={sort} onChange={(v) => setParam("sort", v)} />
+          </div>
+
+          {loading ? (
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-80 animate-pulse rounded-2xl border border-border bg-card"
+                />
+              ))}
+            </div>
+          ) : sorted.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-card p-12 text-center">
+              <p className="text-muted-foreground">No packages match your filters.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {sorted.map((p) => (
+                <PackageCard key={p.id} pkg={p} />
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+    </>
+  );
+}
+
+function SortDropdown({
+  value,
+  onChange,
+}: {
+  value: SortKey;
+  onChange: (v: SortKey) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as SortKey)}
+      className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium"
+    >
+      <option value="popular">Most popular</option>
+      <option value="price-asc">Price: low to high</option>
+      <option value="price-desc">Price: high to low</option>
+    </select>
+  );
+}
+
+function PageHero({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="border-b border-border bg-secondary/40 pb-12 pt-28">
+      <div className="container mx-auto px-4 lg:px-8">
+        <h1 className="font-display text-3xl font-bold md:text-5xl">{title}</h1>
+        {subtitle ? (
+          <p className="mt-2 text-muted-foreground">{subtitle}</p>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { legacyMediaUrl } from "@/lib/media";
 import { sanitizedHtml } from "@/lib/sanitizeHtml";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 type BlogPost = {
   id: number;
@@ -35,19 +37,23 @@ export function BlogPostPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  usePageMeta(
+    post ? `${post.blog_name || post.blogPlace || "Blog"} | SBM Tour India` : "Blog | SBM Tour India"
+  );
+
   if (loading) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-24 text-center text-slate-600">
-        Loading…
+      <div className="container mx-auto px-4 pb-24 pt-28 lg:px-8">
+        <div className="h-[420px] animate-pulse rounded-3xl bg-secondary" />
       </div>
     );
   }
 
   if (err || !post) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-24 text-center">
-        <p className="text-slate-600">{err}</p>
-        <Link to="/blog" className="mt-4 inline-block text-brand-accent">
+      <div className="container mx-auto px-4 pb-24 pt-28 text-center lg:px-8">
+        <p className="text-muted-foreground">{err}</p>
+        <Link to="/blog" className="mt-4 inline-block font-semibold text-primary">
           ← All stories
         </Link>
       </div>
@@ -57,32 +63,38 @@ export function BlogPostPage() {
   const img = legacyMediaUrl("blogs", post.blog_image);
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-10">
+    <article className="container mx-auto px-4 py-12 pt-28 lg:px-8">
       <Link
         to="/blog"
-        className="text-sm font-medium text-brand-accent hover:underline"
+        className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
       >
-        ← All stories
+        <ChevronLeft className="h-4 w-4" /> All stories
       </Link>
 
-      <p className="mt-6 text-sm text-brand-accent">{post.blogPlace}</p>
-      <h1 className="mt-2 text-3xl font-bold text-brand-navy">
-        {post.blog_name || post.blogPlace || "Blog"}
-      </h1>
-      <time className="mt-2 block text-sm text-slate-500">{post.blogDate}</time>
+      <div className="mx-auto mt-8 max-w-3xl">
+        {post.blogPlace ? (
+          <p className="text-sm font-semibold uppercase tracking-wider text-cta">
+            {post.blogPlace}
+          </p>
+        ) : null}
+        <h1 className="mt-2 font-display text-3xl font-bold leading-tight md:text-5xl">
+          {post.blog_name || post.blogPlace || "Blog"}
+        </h1>
+        <time className="mt-3 block text-sm text-muted-foreground">{post.blogDate}</time>
 
-      {img ? (
-        <img
-          src={img}
-          alt=""
-          className="mt-8 w-full rounded-2xl object-cover shadow-md"
+        {img ? (
+          <img
+            src={img}
+            alt=""
+            className="mt-8 aspect-[16/9] w-full rounded-2xl object-cover shadow-card"
+          />
+        ) : null}
+
+        <div
+          className="prose prose-slate mt-8 max-w-none text-foreground/85 [&_a]:text-primary [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-2xl [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_li]:ml-4 [&_p]:mb-4 [&_ul]:list-disc"
+          dangerouslySetInnerHTML={sanitizedHtml(post.blogDesc)}
         />
-      ) : null}
-
-      <div
-        className="mt-8 max-w-none space-y-3 text-slate-700 [&_li]:ml-4 [&_p]:mb-3 [&_ul]:list-disc"
-        dangerouslySetInnerHTML={sanitizedHtml(post.blogDesc)}
-      />
+      </div>
     </article>
   );
 }

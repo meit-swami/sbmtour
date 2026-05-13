@@ -1,5 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Mail, MapPin, MessageCircle, Phone, Send } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
+import { sanitizedFooterHtml } from "@/lib/sanitizeHtml";
+import { usePageMeta } from "@/hooks/usePageMeta";
+
 type WebSettings = {
   contact_page_title?: string;
   address?: string;
@@ -9,15 +13,14 @@ type WebSettings = {
 };
 
 export function ContactPage() {
+  usePageMeta("Contact | SBM Tour India", "Talk to our travel specialists.");
   const [ws, setWs] = useState<WebSettings | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [msg, setMsg] = useState("");
   const [sending, setSending] = useState(false);
-  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(
-    null
-  );
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     apiGet<{ data: WebSettings }>("/api/web-settings")
@@ -37,7 +40,7 @@ export function ContactPage() {
         requirement: msg || undefined,
         destination: "Contact page",
       });
-      setFeedback({ ok: true, text: "Message sent. We’ll reply soon." });
+      setFeedback({ ok: true, text: "Message sent. We'll reply soon." });
       setName("");
       setEmail("");
       setPhone("");
@@ -52,123 +55,196 @@ export function ContactPage() {
     }
   }
 
-  const mapUrl = ws?.map_embed_url?.trim();
-  const showIframe =
-    mapUrl &&
-    (mapUrl.startsWith("https://www.google.com/maps/embed") ||
-      mapUrl.includes("google.com/maps"));
+  const whatsappHref = ws?.contact_number
+    ? `https://wa.me/${ws.contact_number.replace(/\D/g, "").replace(/^(?!91)/, "91")}`
+    : null;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12">
-      <h1 className="text-3xl font-bold text-brand-navy">
-        {ws?.contact_page_title?.trim() || "Contact us"}
-      </h1>
-      <p className="mt-2 text-slate-600">
-        Reach us directly or send a quick message — enquiries are stored in{" "}
-        <code className="text-xs">contactform</code>.
-      </p>
+    <>
+      <div className="border-b border-border bg-secondary/40 pb-12 pt-28">
+        <div className="container mx-auto px-4 lg:px-8">
+          <span className="text-xs font-semibold uppercase tracking-wider text-cta">
+            Get in touch
+          </span>
+          <h1 className="mt-2 font-display text-3xl font-bold md:text-5xl">
+            {ws?.contact_page_title?.trim() || "Plan your dream trip with us"}
+          </h1>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            Tell us where you'd like to go and we'll craft a custom itinerary in 24 hours. No obligation, no fees.
+          </p>
+        </div>
+      </div>
 
-      <div className="mt-10 grid gap-10 md:grid-cols-2">
+      <div className="container mx-auto grid items-start gap-12 px-4 py-12 lg:grid-cols-2 lg:px-8">
         <div>
-          <h2 className="text-lg font-semibold text-brand-navy">Details</h2>
-          <ul className="mt-4 space-y-3 text-slate-700">
-            {ws?.address ? <li>{ws.address}</li> : null}
+          <div className="space-y-4">
+            {ws?.address ? (
+              <ContactRow icon={MapPin} title="Office" value={ws.address} />
+            ) : null}
             {ws?.contact_number ? (
-              <li>
-                <a
-                  href={`tel:${ws.contact_number}`}
-                  className="text-brand-accent hover:underline"
-                >
-                  {ws.contact_number}
-                </a>
-              </li>
+              <ContactRow
+                icon={Phone}
+                title="Call"
+                value={ws.contact_number}
+                href={`tel:${ws.contact_number}`}
+              />
             ) : null}
             {ws?.contact_email ? (
-              <li>
-                <a
-                  href={`mailto:${ws.contact_email}`}
-                  className="text-brand-accent hover:underline"
-                >
-                  {ws.contact_email}
-                </a>
-              </li>
-            ) : null}
-          </ul>
-
-          {showIframe ? (
-            <div className="mt-6 aspect-video w-full overflow-hidden rounded-xl border border-slate-200">
-              <iframe
-                title="Map"
-                src={mapUrl}
-                className="h-full w-full border-0"
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
+              <ContactRow
+                icon={Mail}
+                title="Email"
+                value={ws.contact_email}
+                href={`mailto:${ws.contact_email}`}
               />
-            </div>
-          ) : mapUrl ? (
+            ) : null}
+          </div>
+
+          {whatsappHref ? (
             <a
-              href={mapUrl}
+              href={whatsappHref}
               target="_blank"
               rel="noreferrer"
-              className="mt-6 inline-block text-sm font-medium text-brand-accent hover:underline"
+              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-forest px-5 py-3 font-semibold text-forest-foreground shadow-cta transition hover:scale-[1.02]"
             >
-              Open map
+              <MessageCircle className="h-5 w-5" /> WhatsApp us instantly
             </a>
+          ) : null}
+
+          {ws?.map_embed_url ? (
+            <div
+              className="mt-8 overflow-hidden rounded-2xl border border-border shadow-soft [&_iframe]:aspect-[16/9] [&_iframe]:w-full"
+              dangerouslySetInnerHTML={sanitizedFooterHtml(String(ws.map_embed_url))}
+            />
           ) : null}
         </div>
 
-        <div>
-          <h2 className="text-lg font-semibold text-brand-navy">Message</h2>
+        <form
+          onSubmit={onSubmit}
+          className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-card md:p-8"
+        >
+          <h2 className="font-display text-xl font-semibold">Send an enquiry</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field
+              label="Name"
+              value={name}
+              onChange={setName}
+              required
+              placeholder="Jane Doe"
+            />
+            <Field
+              label="Phone"
+              value={phone}
+              onChange={setPhone}
+              required
+              placeholder="+91 98765 43210"
+            />
+          </div>
+          <Field
+            label="Email"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            required
+            placeholder="jane@example.com"
+          />
+          <label className="block">
+            <span className="text-xs font-semibold text-muted-foreground">
+              Tell us about your trip
+            </span>
+            <textarea
+              rows={4}
+              value={msg}
+              onChange={(e) => setMsg(e.target.value)}
+              placeholder="Travel dates, group size, interests…"
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </label>
           {feedback ? (
-            <p
-              className={`mt-2 text-sm ${
-                feedback.ok ? "text-emerald-600" : "text-rose-600"
-              }`}
-            >
+            <p className={feedback.ok ? "text-sm text-forest" : "text-sm text-destructive"}>
               {feedback.text}
             </p>
           ) : null}
-          <form onSubmit={onSubmit} className="mt-4 space-y-3">
-            <input
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-            <input
-              required
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-            <input
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Phone"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-            <textarea
-              value={msg}
-              onChange={(e) => setMsg(e.target.value)}
-              placeholder="How can we help?"
-              rows={4}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              disabled={sending}
-              className="rounded-lg bg-brand-accent px-6 py-2.5 text-sm font-semibold text-brand-navy hover:bg-brand-accent-hover disabled:opacity-60"
-            >
-              {sending ? "Sending…" : "Send"}
-            </button>
-          </form>
+          <button
+            type="submit"
+            disabled={sending}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-cta px-4 py-3 font-semibold text-cta-foreground shadow-cta hover:bg-cta/90 disabled:opacity-60"
+          >
+            {sending ? (
+              "Sending…"
+            ) : (
+              <>
+                Send enquiry <Send className="h-4 w-4" />
+              </>
+            )}
+          </button>
+          <p className="text-center text-xs text-muted-foreground">
+            We respond within 4 hours during business days.
+          </p>
+        </form>
+      </div>
+    </>
+  );
+}
+
+function ContactRow({
+  icon: Icon,
+  title,
+  value,
+  href,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  value: string;
+  href?: string;
+}) {
+  const inner = (
+    <div className="flex items-start gap-4">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent">
+        <Icon className="h-5 w-5 text-primary" />
+      </div>
+      <div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
         </div>
+        <div className="font-medium">{value}</div>
       </div>
     </div>
+  );
+  return href ? (
+    <a href={href} className="block transition hover:opacity-80">
+      {inner}
+    </a>
+  ) : (
+    inner
+  );
+}
+
+function Field({
+  label,
+  type = "text",
+  value,
+  onChange,
+  required,
+  placeholder,
+}: {
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-semibold text-muted-foreground">{label}</span>
+      <input
+        type={type}
+        required={required}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+      />
+    </label>
   );
 }

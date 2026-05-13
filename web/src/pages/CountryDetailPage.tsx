@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ArrowRight, ChevronLeft, Globe } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { legacyMediaUrl } from "@/lib/media";
 import { sanitizedHtml } from "@/lib/sanitizeHtml";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 type Country = {
   id: number;
@@ -45,19 +47,25 @@ export function CountryDetailPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  usePageMeta(
+    data?.country
+      ? `${data.country.country_name} | SBM Tour India`
+      : "Country | SBM Tour India"
+  );
+
   if (loading) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-24 text-center text-slate-600">
-        Loading…
+      <div className="container mx-auto px-4 pb-24 pt-28 lg:px-8">
+        <div className="h-[420px] animate-pulse rounded-3xl bg-secondary" />
       </div>
     );
   }
 
   if (err || !data) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-24 text-center">
-        <p className="text-slate-600">{err}</p>
-        <Link to="/countries" className="mt-4 inline-block text-brand-accent">
+      <div className="container mx-auto px-4 pb-24 pt-28 text-center lg:px-8">
+        <p className="text-muted-foreground">{err}</p>
+        <Link to="/countries" className="mt-4 inline-block font-semibold text-primary">
           ← All countries
         </Link>
       </div>
@@ -68,86 +76,86 @@ export function CountryDetailPage() {
   const hero = legacyMediaUrl("country", country.country_image);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <Link
-        to="/countries"
-        className="text-sm font-medium text-brand-accent hover:underline"
-      >
-        ← All countries
-      </Link>
-
-      {hero ? (
-        <img
-          src={hero}
-          alt=""
-          className="mt-6 aspect-[21/9] w-full rounded-2xl object-cover shadow-md"
-        />
-      ) : null}
-
-      <h1 className="mt-8 text-3xl font-bold text-brand-navy">
-        {country.country_name}
-      </h1>
+    <>
+      <section className="relative h-[55svh] min-h-[380px]">
+        {hero ? (
+          <img src={hero} alt={country.country_name} className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-secondary">
+            <Globe className="h-24 w-24 text-muted-foreground" />
+          </div>
+        )}
+        <div className="absolute inset-0 gradient-hero" />
+        <div className="container relative mx-auto flex h-full flex-col justify-end px-4 pb-10 pt-24 text-white lg:px-8">
+          <Link
+            to="/countries"
+            className="mb-4 inline-flex w-fit items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" /> All countries
+          </Link>
+          <h1 className="font-display text-4xl font-extrabold leading-tight md:text-6xl">
+            {country.country_name}
+          </h1>
+        </div>
+      </section>
 
       {country.product_features?.trim() ? (
-        <div
-          className="mt-8 max-w-none space-y-3 text-slate-700 [&_li]:ml-4 [&_p]:mb-3 [&_ul]:list-disc"
-          dangerouslySetInnerHTML={sanitizedHtml(country.product_features)}
-        />
-      ) : (
-        <p className="mt-6 text-slate-600">
-          Browse destinations and packages for this country below.
-        </p>
-      )}
+        <section className="container mx-auto px-4 py-12 lg:px-8">
+          <div
+            className="prose prose-slate max-w-3xl text-foreground/85 [&_li]:ml-4 [&_p]:mb-3 [&_ul]:list-disc"
+            dangerouslySetInnerHTML={sanitizedHtml(country.product_features)}
+          />
+        </section>
+      ) : null}
 
       {destinations.length > 0 ? (
-        <div className="mt-12">
-          <h2 className="text-xl font-bold text-brand-navy">Destinations</h2>
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+        <section className="container mx-auto px-4 pb-16 lg:px-8">
+          <h2 className="font-display text-2xl font-bold">Destinations in {country.country_name}</h2>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {destinations.map((d) => {
               const thumb = legacyMediaUrl("destination", d.destination_image);
               return (
-              <li key={d.id}>
                 <Link
+                  key={d.id}
                   to={`/destinations/${d.destination_slug}`}
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-accent"
+                  className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition hover:border-primary hover:shadow-soft"
                 >
                   {thumb ? (
                     <img
                       src={thumb}
                       alt=""
-                      className="h-14 w-14 rounded-lg object-cover"
+                      className="h-16 w-16 shrink-0 rounded-xl object-cover"
                     />
                   ) : (
-                    <div className="h-14 w-14 rounded-lg bg-slate-100" />
+                    <div className="h-16 w-16 shrink-0 rounded-xl bg-secondary" />
                   )}
                   <div>
-                    <p className="font-medium text-brand-navy">
-                      {d.destination_name}
-                    </p>
-                    <p className="text-xs text-slate-500">{d.destination_type}</p>
+                    <p className="font-display font-semibold">{d.destination_name}</p>
+                    <p className="text-xs text-muted-foreground">{d.destination_type}</p>
                   </div>
                 </Link>
-              </li>
               );
             })}
-          </ul>
-        </div>
+          </div>
+        </section>
       ) : null}
 
-      <div className="mt-10 flex flex-wrap gap-3">
-        <Link
-          to={`/packages`}
-          className="inline-flex rounded-lg bg-brand-accent px-6 py-3 font-semibold text-brand-navy hover:bg-brand-accent-hover"
-        >
-          View packages
-        </Link>
-        <Link
-          to="/destinations"
-          className="inline-flex rounded-lg border border-slate-300 px-6 py-3 font-semibold text-brand-navy hover:bg-slate-50"
-        >
-          All destinations
-        </Link>
-      </div>
-    </div>
+      <section className="container mx-auto px-4 pb-20 lg:px-8">
+        <div className="flex flex-wrap gap-3">
+          <Link
+            to="/packages"
+            className="inline-flex items-center gap-2 rounded-lg bg-cta px-6 py-3 font-semibold text-cta-foreground shadow-cta hover:bg-cta/90"
+          >
+            View packages <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            to="/plan-trip"
+            className="inline-flex rounded-lg border border-border bg-card px-6 py-3 font-semibold hover:bg-secondary"
+          >
+            Plan a custom trip
+          </Link>
+        </div>
+      </section>
+    </>
   );
 }

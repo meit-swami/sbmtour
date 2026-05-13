@@ -1,17 +1,22 @@
-import { Outlet } from "react-router-dom";
-import { FloatingContactWidgets } from "@/components/FloatingContactWidgets";
-import { PublicNav } from "@/components/PublicNav";
-import { SiteFooter } from "@/components/SiteFooter";
+import { useLocation, Outlet } from "react-router-dom";
+import { Footer } from "@/components/site/Footer";
+import { LeadFormPopup } from "@/components/site/LeadFormPopup";
+import { Navbar } from "@/components/site/Navbar";
+import { WhatsAppFab } from "@/components/site/WhatsAppFab";
 
 export function PublicLayout() {
+  const location = useLocation();
+  const transparentOnTop = location.pathname === "/";
+
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
-      <PublicNav />
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <Navbar transparentOnTop={transparentOnTop} />
       <main className="flex-1">
         <Outlet />
       </main>
-      <SiteFooter />
-      <FloatingContactWidgets />
+      <Footer />
+      <WhatsAppFab />
+      <LeadFormPopup />
     </div>
   );
 }

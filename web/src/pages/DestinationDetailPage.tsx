@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ArrowRight, ChevronLeft, MapPin } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { legacyMediaUrl } from "@/lib/media";
 import { sanitizedHtml } from "@/lib/sanitizeHtml";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 type DestinationDetail = {
   id: number;
@@ -34,9 +36,7 @@ export function DestinationDetailPage() {
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
-    apiGet<Response>(
-      `/api/destinations/slug/${encodeURIComponent(slug)}`
-    )
+    apiGet<Response>(`/api/destinations/slug/${encodeURIComponent(slug)}`)
       .then((r) => {
         setData(r.data);
         setErr(null);
@@ -48,19 +48,28 @@ export function DestinationDetailPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  usePageMeta(
+    data?.destination
+      ? `${data.destination.destination_name} | SBM Tour India`
+      : "Destination | SBM Tour India",
+    data?.destination?.metaTagDesc
+      ? String(data.destination.metaTagDesc).slice(0, 160)
+      : undefined
+  );
+
   if (loading) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-24 text-center text-slate-600">
-        Loading…
+      <div className="container mx-auto px-4 pb-24 pt-28 lg:px-8">
+        <div className="h-[420px] animate-pulse rounded-3xl bg-secondary" />
       </div>
     );
   }
 
   if (err || !data) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-24 text-center">
-        <p className="text-slate-600">{err}</p>
-        <Link to="/destinations" className="mt-4 inline-block text-brand-accent">
+      <div className="container mx-auto px-4 pb-24 pt-28 text-center lg:px-8">
+        <p className="text-muted-foreground">{err}</p>
+        <Link to="/destinations" className="mt-4 inline-block font-semibold text-primary">
           ← All destinations
         </Link>
       </div>
@@ -71,59 +80,82 @@ export function DestinationDetailPage() {
   const hero = legacyMediaUrl("destination", d.destination_image);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <Link
-        to="/destinations"
-        className="text-sm font-medium text-brand-accent hover:underline"
-      >
-        ← All destinations
-      </Link>
+    <>
+      <section className="relative h-[60svh] min-h-[420px]">
+        {hero ? (
+          <img src={hero} alt={d.destination_name} className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 bg-secondary" />
+        )}
+        <div className="absolute inset-0 gradient-hero" />
+        <div className="container relative mx-auto flex h-full flex-col justify-end px-4 pb-10 pt-24 text-white lg:px-8">
+          <Link
+            to="/destinations"
+            className="mb-4 inline-flex w-fit items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" /> All destinations
+          </Link>
+          <span className="text-xs font-semibold uppercase tracking-wider text-gold">
+            {d.destination_type}
+          </span>
+          <h1 className="mt-2 font-display text-4xl font-extrabold leading-tight md:text-6xl">
+            {d.destination_name}
+          </h1>
+          <p className="mt-2 inline-flex items-center gap-2 text-white/85">
+            <MapPin className="h-4 w-4" /> {d.country_name}
+          </p>
+        </div>
+      </section>
 
-      {hero ? (
-        <img
-          src={hero}
-          alt=""
-          className="mt-6 aspect-[21/9] w-full rounded-2xl object-cover shadow-md"
+      <section className="container mx-auto px-4 py-12 lg:px-8">
+        <div
+          className="prose prose-slate max-w-3xl text-foreground/85 [&_li]:ml-4 [&_p]:mb-3 [&_ul]:list-disc"
+          dangerouslySetInnerHTML={sanitizedHtml(d.destDesc)}
         />
-      ) : null}
-
-      <p className="mt-6 text-sm font-medium text-brand-accent">
-        {d.country_name} · {d.destination_type}
-      </p>
-      <h1 className="mt-2 text-3xl font-bold text-brand-navy">
-        {d.destination_name}
-      </h1>
-
-      <div
-        className="mt-8 max-w-none space-y-3 text-slate-700 [&_li]:ml-4 [&_p]:mb-3 [&_ul]:list-disc"
-        dangerouslySetInnerHTML={sanitizedHtml(d.destDesc)}
-      />
+      </section>
 
       {data.gallery.length > 0 ? (
-        <div className="mt-12">
-          <h2 className="text-xl font-bold text-brand-navy">Gallery</h2>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <section className="container mx-auto px-4 pb-16 lg:px-8">
+          <h2 className="font-display text-2xl font-bold">Gallery</h2>
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {data.gallery.map((g) => {
               const url = legacyMediaUrl("destination/gallery", g.image_file);
               return url ? (
-                <img
+                <a
                   key={g.image_file}
-                  src={url}
-                  alt=""
-                  className="aspect-square w-full rounded-lg object-cover"
-                />
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="overflow-hidden rounded-xl bg-muted"
+                >
+                  <img
+                    src={url}
+                    alt=""
+                    className="aspect-square w-full object-cover transition-transform hover:scale-105"
+                  />
+                </a>
               ) : null;
             })}
           </div>
-        </div>
+        </section>
       ) : null}
 
-      <Link
-        to="/packages"
-        className="mt-10 inline-flex rounded-lg bg-brand-accent px-6 py-3 font-semibold text-brand-navy hover:bg-brand-accent-hover"
-      >
-        View packages
-      </Link>
-    </div>
+      <section className="container mx-auto px-4 pb-20 lg:px-8">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/packages"
+            className="inline-flex items-center gap-2 rounded-lg bg-cta px-6 py-3 font-semibold text-cta-foreground shadow-cta hover:bg-cta/90"
+          >
+            View packages <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            to="/plan-trip"
+            className="inline-flex rounded-lg border border-border bg-card px-6 py-3 font-semibold hover:bg-secondary"
+          >
+            Plan a custom trip
+          </Link>
+        </div>
+      </section>
+    </>
   );
 }

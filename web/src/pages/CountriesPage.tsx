@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Globe } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { legacyMediaUrl } from "@/lib/media";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 type CountryRow = {
   id: number;
@@ -12,6 +14,7 @@ type CountryRow = {
 };
 
 export function CountriesPage() {
+  usePageMeta("Countries | SBM Tour India", "Explore tours by country.");
   const [rows, setRows] = useState<CountryRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,48 +26,66 @@ export function CountriesPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <h1 className="text-3xl font-bold text-brand-navy">Countries</h1>
-      <p className="mt-2 text-slate-600">
-        Explore destinations by country — from <code className="text-xs">tbl_country</code>.
-      </p>
+    <>
+      <div className="border-b border-border bg-secondary/40 pb-12 pt-28">
+        <div className="container mx-auto px-4 lg:px-8">
+          <span className="text-xs font-semibold uppercase tracking-wider text-cta">
+            Around the world
+          </span>
+          <h1 className="mt-2 font-display text-3xl font-bold md:text-5xl">
+            Countries
+          </h1>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            Discover dream destinations by country — from beach paradises to mountain retreats.
+          </p>
+        </div>
+      </div>
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="container mx-auto px-4 py-10 lg:px-8">
         {loading ? (
-          <p className="col-span-full text-center text-slate-500">Loading…</p>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-64 animate-pulse rounded-2xl border border-border bg-card"
+              />
+            ))}
+          </div>
         ) : (
-          rows.map((c) => {
-            const img = legacyMediaUrl("country", c.country_image);
-            return (
-              <Link
-                key={c.id}
-                to={`/countries/${c.country_slug}`}
-                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
-              >
-                <div className="flex aspect-[16/10] items-center justify-center overflow-hidden bg-slate-100">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {rows.map((c) => {
+              const img = legacyMediaUrl("country", c.country_image);
+              return (
+                <Link
+                  key={c.id}
+                  to={`/countries/${c.country_slug}`}
+                  className="group relative aspect-[4/5] overflow-hidden rounded-2xl shadow-soft hover-lift"
+                >
                   {img ? (
                     <img
                       src={img}
-                      alt=""
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      alt={c.country_name}
+                      loading="lazy"
+                      className="img-zoom h-full w-full object-cover"
                     />
                   ) : (
-                    <span className="text-4xl opacity-30">🌍</span>
+                    <div className="flex h-full items-center justify-center bg-secondary">
+                      <Globe className="h-10 w-10 text-muted-foreground" />
+                    </div>
                   )}
-                </div>
-                <div className="p-4">
-                  <h2 className="text-lg font-semibold text-brand-navy group-hover:text-brand-accent">
-                    {c.country_name}
-                  </h2>
-                  {c.set_on_home ? (
-                    <p className="mt-1 text-xs text-brand-accent">Featured on home</p>
-                  ) : null}
-                </div>
-              </Link>
-            );
-          })
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-4 text-white">
+                    <h2 className="font-display text-xl font-bold">{c.country_name}</h2>
+                    {c.set_on_home ? (
+                      <p className="text-xs text-gold">Featured</p>
+                    ) : null}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         )}
       </div>
-    </div>
+    </>
   );
 }
